@@ -1,7 +1,7 @@
 exp/proj/shepp_logan
 exp/geo/translation.in
 none
-exp/vox/shepp_logan(mlem_400x400x100_40).rec.raw
+exp/vox/shepp_logan(sart_400x400x100_1.0_1).rec.raw
 3000
 3000
 0.5
@@ -11,4 +11,4 @@ exp/vox/shepp_logan(mlem_400x400x100_40).rec.raw
 0.5
 2.0
 1.0
-40
+1

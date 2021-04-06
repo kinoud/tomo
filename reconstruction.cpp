@@ -4,11 +4,12 @@
 #include"solver.h"
 #include"util.h"
 #include"MLEM.h"
+#include"SART.h"
 using namespace std;
 
 char scheme[100] = "exp/shepp_logan.rec.sche";
 char in_dir[100];
-//char in_dir[100] = "Ä£ÄâÍ¶Ó°Êý¾Ý/Æ½ÐÐÒÆ¶¯¹ì¼£/µ¥·ù";
+//char in_dir[100] = "Ä£ï¿½ï¿½Í¶Ó°ï¿½ï¿½ï¿½ï¿½/Æ½ï¿½ï¿½ï¿½Æ¶ï¿½ï¿½ì¼£/ï¿½ï¿½ï¿½ï¿½";
 char geo_cfg[100];
 char check_point[100];
 char out_file[100];
@@ -16,7 +17,7 @@ char out_file[100];
 char tmp_str[100];
 Config *cfg = new Config();
 
-MLEM solver;
+SART solver;
 
 Config::raw_t* raw_data;
 
@@ -79,6 +80,7 @@ int main(){
         >> cfg->object_h
         >> cfg->lambda
         >> T;
+    // printf("geo=%s\n",geo_cfg);
     open_file(fin, geo_cfg);
     int n; fin >> n;
     for(int i=0;i<n;i++){

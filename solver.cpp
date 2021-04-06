@@ -4,6 +4,7 @@
 using namespace std;
 
 void Solver::read_raw(int view_k) {
+    // printf("ccn=%p\n", cfg);
     ifstream fin(cfg->projections[view_k], ios::binary);
     if (!fin.is_open()) {
         cout << "open file failed" << endl;

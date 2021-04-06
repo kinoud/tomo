@@ -13,13 +13,12 @@ private:
 	double *dvoxel=NULL;
 	double *voxel_factor=NULL;
 	int view_k;
-	Config *cfg;
+	void fun(int x);
+	void update(int I0,int I1,double* dvoxel,double* voxel_factor);
 	
 public:
-	Siddon siddon;
 	double* proj = NULL, * sproj = NULL;
-	double* voxel = NULL;
 	virtual void init(Config*cfg);
-	void update();
+	
 	virtual void iterate();
 };
