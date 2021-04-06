@@ -37,6 +37,7 @@ void SART::init(Config *cfg)
     delete[] voxel;
     delete[] proj;
     delete[] sproj;
+    delete[] line_weight;
 
     int nt = cfg->num_threads;
     proj = new double[bI * bJ];
@@ -44,8 +45,10 @@ void SART::init(Config *cfg)
     voxel_factor = new double[nt * V];
     dvoxel = new double[nt * V];
     voxel = new double[V];
+    line_weight = new double[bI];
     mem_stat(2 * bI * bJ * sizeof(double));
     mem_stat((nt + nt + 1) * V * sizeof(double));
+    mem_stat(bI*sizeof(double));
 
     for (int i = 0; i < V; i++)
         voxel[i] = 0;
@@ -64,25 +67,48 @@ void SART::iterate()
     int nt = cfg->num_threads;
     int *Is = new int[nt + 1];
     thread *ths = new thread[nt];
-    Is[0] = 0;
-    int block = (cfg->board_I + nt - 1) / nt;
-    for (int i = 1; i <= nt; i++)
-        Is[i] = min(Is[i - 1] + block, cfg->board_I);
+
+    int bI = cfg->board_I, bJ = cfg->board_J;
     int V = cfg->object_I * cfg->object_J * cfg->object_K;
+    Is[0] = 0,Is[nt]=bI;
+    
     while (view_k < cfg->tubes.size())
     {
-        printf("\rview %2d/%d",view_k+1,cfg->tubes.size());
-
-        for (int i = 0; i < nt; i++)
-        {
-            printf(" [%d,%d) ",Is[i],Is[i+1]);
-            update(Is[i], Is[i + 1], dvoxel + i * V, voxel_factor + i * V);
-            //ths[i]=thread(update,this, Is[i], Is[i + 1], dvoxel + i * block, voxel_factor + i * block);
-            // ths[i]=thread(fun,i);
+        //printf("\r                                                                     ");
+        printf("\rview %2d/%d ",view_k+1,cfg->tubes.size());
+        read_raw(view_k);
+        for(int i=0;i<bI;i++)line_weight[i]=0;
+        double W=0;
+        for (int r = 0; r < bI * bJ; r++){
+            proj[r] = raw_data[r];
+            W+=proj[r];
+            line_weight[r/bJ]+=proj[r];
+        }
+        W/=nt;
+        int nt_k=1;
+        for(int i=1;i<bI;i++){
+            line_weight[i]+=line_weight[i-1];
+            if(line_weight[i]>W){
+                Is[nt_k++]=i;
+                line_weight[i]=0;
+                if(nt_k==nt)break;
+            }
         }
         for (int i = 0; i < nt; i++)
         {
-            //ths[i].join();
+            // printf(" %4d",Is[i+1]-Is[i]);
+            // clock_t t1 = clock();
+            // update(Is[i], Is[i + 1], dvoxel + i * V, voxel_factor + i * V);
+            // printf("(%2.2fs)",1.0*(clock()-t1)/CLOCKS_PER_SEC);
+            ths[i]=thread(
+                [this, Is,i,V]{
+                    update(Is[i], Is[i + 1], this->dvoxel + i * V, this->voxel_factor + i * V);
+                }
+            );
+        }
+        for (int i = 0; i < nt; i++)
+        {
+            ths[i].join();
         }
         for (int i = 1; i < nt; i++)
         {
@@ -112,10 +138,7 @@ void SART::update(int I0, int I1, double *dvoxel, double *voxel_factor)
 
     p3 tube = cfg->tubes[view_k];
     p3 board = cfg->boards[view_k];
-
-    read_raw(view_k);
-    for (int i = 0; i < bI * bJ; i++)
-        proj[i] = raw_data[i];
+    
 
     for (int i = 0; i < V; i++)
     {

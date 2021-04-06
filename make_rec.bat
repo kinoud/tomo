@@ -1,1 +1,1 @@
-g++ -Wall MLEM.cpp SART.cpp reconstruction.cpp siddon.cpp solver.cpp -o rec -O2
+g++ -Wall MLEM.cpp SART.cpp reconstruction.cpp siddon.cpp solver.cpp -o rec --debug

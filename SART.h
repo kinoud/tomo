@@ -13,6 +13,7 @@ private:
 	double *dvoxel=NULL;
 	double *voxel_factor=NULL;
 	int view_k;
+	double *line_weight=NULL;
 	void fun(int x);
 	void update(int I0,int I1,double* dvoxel,double* voxel_factor);
 	
