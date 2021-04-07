@@ -2,6 +2,7 @@
 #include<algorithm>
 #include"assert.h"
 #include"siddon.h"
+#include"util.h"
 #include<time.h>
 #include<math.h>
 using namespace std;
@@ -64,6 +65,7 @@ void Siddon::init(Config* cfg) {
 	voxel_a = new double[n];
 	arr_t = new double[3 * n];
 	arr_t_tmp = new double[3 * n];
+	mem_stat((0.5 + 7) * n * sizeof(double));
 	object_x0 = -0.5 * cfg->object_I * cfg->object_w;
 	object_y0 = -0.5 * cfg->object_J * cfg->object_w;
 	object_z0 = -0.5 * cfg->object_K * cfg->object_h;

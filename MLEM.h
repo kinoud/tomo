@@ -1,14 +1,17 @@
 #pragma once
 #include "solver.h"
+#include<mutex>
+using namespace std;
 class MLEM: public Solver
 {
 private:
-	double* mvoxel = NULL;
-	double* voxel_factor = NULL;
-	double* proj = NULL, * sproj = NULL;
-	void simulate(int view_k);
+	double* _mvoxel = NULL;
+	double* _voxel_factor = NULL;
+	double* _proj = NULL;
+	mutex _mtx;
+	void simulate(int th);
 public:
-	virtual void init(Config* cfg);
+	void init(Config* cfg);
 	virtual void iterate();
 };
 

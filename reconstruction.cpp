@@ -17,7 +17,7 @@ char out_file[100];
 char tmp_str[100];
 Config *cfg = new Config();
 
-SART solver;
+MLEM solver;
 
 Config::raw_t* raw_data;
 
@@ -113,8 +113,8 @@ int main(){
         double e = timer(clk);
         sec += e;
         cout<<e<<"s (total " << sec << "s)\n";
-        printf("time1 = %.2fs time2 = %.2fs\n", 1.0*solver.siddon.time1 / CLOCKS_PER_SEC,
-            1.0*solver.siddon.time2 / CLOCKS_PER_SEC);
+        //printf("time1 = %.2fs time2 = %.2fs\n", 1.0*solver.siddon.time1 / CLOCKS_PER_SEC,
+        //   1.0*solver.siddon.time2 / CLOCKS_PER_SEC);
     }
     save_sections_raw();
 }

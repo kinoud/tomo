@@ -1,4 +1,4 @@
 exp/vox/*
 exp/proj/*
 .vscode/*
-.ipynb_checkpoints/*
+.*

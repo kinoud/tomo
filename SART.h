@@ -3,6 +3,9 @@
 #include"siddon.h"
 #include"solver.h"
 #include<string>
+#include<mutex>
+#include<queue>
+using namespace std;
 struct int_double{
     int x;
     double y;
@@ -13,13 +16,15 @@ private:
 	double *dvoxel=NULL;
 	double *voxel_factor=NULL;
 	int view_k;
-	double *line_weight=NULL;
-	void fun(int x);
-	void update(int I0,int I1,double* dvoxel,double* voxel_factor);
+	int *p_cnt=NULL;
+	mutex _mtx;
+	int* _sta=NULL;
+	int _top;
+	void update(int th);
 	
 public:
-	double* proj = NULL, * sproj = NULL;
-	virtual void init(Config*cfg);
+	double* proj = NULL;
+	void init(Config*cfg);
 	
 	virtual void iterate();
 };

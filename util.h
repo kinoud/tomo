@@ -6,6 +6,20 @@
 #include"config.h"
 using namespace std;
 
+inline void mem_stat(int new_bytes)
+{
+	return;
+	static long long bytes = 0;
+	static int prog = 0;
+	int step = 50; //MB
+	bytes += new_bytes;
+	if (bytes / (step * (1 << 20)) > prog)
+	{
+		prog = bytes / (step * (1 << 20));
+		cout << "[mem " << prog * step << "MB allocated]" << endl;
+	}
+}
+
 inline double timer(clock_t start) {
 	return double(clock() - start) / CLOCKS_PER_SEC;
 }
