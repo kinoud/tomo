@@ -17,7 +17,7 @@ char out_file[100];
 char tmp_str[100];
 Config *cfg = new Config();
 
-MLEM solver;
+SART solver;
 
 Config::raw_t* raw_data;
 

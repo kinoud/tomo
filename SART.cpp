@@ -48,7 +48,7 @@ void SART::iterate()
 
     int bI = cfg->board_I, bJ = cfg->board_J;
     int V = cfg->object_I * cfg->object_J * cfg->object_K;
-
+    view_k = 0;
     while (view_k < cfg->tubes.size())
     {
         //printf("\r                                                                     ");

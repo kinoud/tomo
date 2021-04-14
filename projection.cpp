@@ -14,8 +14,8 @@ char scheme[100] = "exp/shepp_logan.proj.sche";
 char voxel_in[100];
 char geo_cfg[100];
 char out_dir[100];
-typedef unsigned short raw_in_t;
-typedef unsigned short raw_out_t;
+typedef Config::raw_t raw_in_t;
+typedef Config::raw_t raw_out_t;
 raw_in_t* in_data;
 raw_out_t* out_data;
 double* voxel;
@@ -105,7 +105,10 @@ int main() {
 	double a = 0, b = 0;
 	for (int v = 0; v < V; v++) {
 		voxel[v] = in_data[v];
+		a = max(a, voxel[v]);
+		b = min(b, voxel[v]);
 	}
+	printf("maxv = %.2f, minv = %.2f\n", a, b);
 	cout << "ok\n";
 	printf("%.2fs used\n", timer(t));
 	
