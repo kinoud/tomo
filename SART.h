@@ -21,7 +21,8 @@ private:
 	int* _sta=NULL;
 	int _top;
 	void update(int th);
-	
+	int* turn_to_view = NULL;
+	vector<Siddon> siddons;
 public:
 	double* proj = NULL;
 	void init(Config*cfg);

@@ -10,19 +10,24 @@
 #include "util.h"
 #include <fstream>
 #include<mutex>
+#include<time.h>
 using namespace std;
 
 void SART::init(Config *cfg)
 {
     Solver::init(cfg);
+    siddons.resize(cfg->num_threads);
+    for (int i = 0; i < cfg->num_threads; i++)
+        siddons[i].init(cfg);
     view_k = 0;
-
+    srand(time(0));
     int bI = cfg->board_I, bJ = cfg->board_J;
     int V = cfg->object_I * cfg->object_J * cfg->object_K;
     delete[] voxel_factor;
     delete[] dvoxel;
     delete[] proj;
     delete[] _sta;
+    delete[] turn_to_view;
     //delete[] is_bg;
 
     int nt = cfg->num_threads;
@@ -31,11 +36,10 @@ void SART::init(Config *cfg)
     dvoxel = new double[nt * V];
     p_cnt = new int[bI];
     _sta = new int[bI];
-    //is_bg = new bool[bI * bJ];
-    mem_stat(2 * bI * bJ * sizeof(double));
-    mem_stat((nt + nt) * V * sizeof(double));
-    mem_stat(2 * bI * sizeof(int));
-   // mem_stat(bI * bJ * sizeof(bool));
+    
+    turn_to_view = new int[cfg->tubes.size()];
+    for (int i = 0; i < cfg->tubes.size(); i++)
+        turn_to_view[i] = i;
 
     for (int i = 0; i < V; i++)
         voxel[i] = 0;
@@ -48,11 +52,21 @@ void SART::iterate()
 
     int bI = cfg->board_I, bJ = cfg->board_J;
     int V = cfg->object_I * cfg->object_J * cfg->object_K;
+    int turn = 0;
+
+    int view_N = cfg->tubes.size();
+    for (int i = 0; i < view_N;i++) {
+        int a = rand() % view_N;
+        int b = rand() % view_N;
+        swap(turn_to_view[a], turn_to_view[b]);
+    }
+
     view_k = 0;
-    while (view_k < cfg->tubes.size())
+    while (turn < view_N)
     {
+        view_k = turn_to_view[turn];
         //printf("\r                                                                     ");
-        printf("\rview %2d/%d",view_k+1,cfg->tubes.size());
+        printf("\rturn %2d/%d", turn + 1, view_N, view_k);
         read_raw(view_k);
 
         int W=0;
@@ -104,13 +118,16 @@ void SART::iterate()
         }
         for (int v = 0; v < V; v++)
         {
-            if (voxel_factor[v] == 0)
+            if (voxel_factor[v] == 0) {
+                printf("error: voxel_factor=0\n");
                 continue;
+            }
+                
             voxel[v] += cfg->lambda * dvoxel[v] / voxel_factor[v];
             if (voxel[v] < 0)
                 voxel[v] = 0;
         }
-        view_k++;
+        turn++;
     }
     delete[] ths;
 }

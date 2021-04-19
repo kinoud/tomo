@@ -7,13 +7,11 @@
 #include"SART.h"
 using namespace std;
 
-char scheme[100] = "exp/shepp_logan.rec.sche";
+char scheme[100] = "exp/rec.sche";
 char in_dir[100];
-//char in_dir[100] = "ģ��ͶӰ����/ƽ���ƶ��켣/����";
 char geo_cfg[100];
 char check_point[100];
 char out_file[100];
-//char out_file[100] = "ly_82x400x400_uint8.rec_la1_it1.raw";
 char tmp_str[100];
 Config *cfg = new Config();
 

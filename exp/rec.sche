@@ -1,15 +1,15 @@
-exp/proj/head
-exp/geo/translation.in
+exp/proj/head_circle
+exp/geo/circle.in
 none
-exp/vox/head(sart_400x400x82_1.0_20).rec.raw
+exp/vox/siddon/head_circle(sart_ro_164_1.0_20).rec.raw
 3000
 3000
 0.5
 400
 400
-82
+164
 0.5
-2.0
+1.0
 1.0
 20
 

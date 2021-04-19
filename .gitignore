@@ -7,3 +7,4 @@ kernel.cu
 x64/*
 CUDA 11.1 Runtime1.vcxproj
 CUDA 11.1 Runtime1.vcxproj.user
+*.7z

@@ -9,7 +9,6 @@ protected:
 	Config::raw_t* raw_data = NULL;
 	void read_raw(int view_k, Config::raw_t *dst=NULL);
 public:
-	vector<Siddon> siddons;
 	double* voxel = NULL;
 	void init(Config* cfg);
 	virtual void iterate()=0;

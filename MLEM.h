@@ -10,6 +10,7 @@ private:
 	double* _proj = NULL;
 	mutex _mtx;
 	void simulate(int th);
+	vector<Siddon> siddons;
 public:
 	void init(Config* cfg);
 	virtual void iterate();

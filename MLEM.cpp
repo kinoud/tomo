@@ -9,6 +9,9 @@ using namespace std;
 
 void MLEM::init(Config* cfg) {
     Solver::init(cfg);
+    siddons.resize(cfg->num_threads);
+    for (int i = 0; i < cfg->num_threads; i++)
+        siddons[i].init(cfg);
     
     int bI = cfg->board_I, bJ = cfg->board_J;
     int V = cfg->object_I * cfg->object_J * cfg->object_K;

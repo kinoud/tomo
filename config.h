@@ -5,6 +5,9 @@ using namespace std;
 struct p3{
     double x,y,z;
 };
+struct p2{
+    double x,y;
+};
 
 class Config{
 public:
