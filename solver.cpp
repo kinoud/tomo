@@ -9,7 +9,7 @@ void Solver::read_raw(int view_k, Config::raw_proj_t*dst) {
     if (dst == NULL)dst = raw_data;
     ifstream fin(cfg->projections[view_k], ios::binary);
     if (!fin.is_open()) {
-        printf("opening file '%s' failed\n", cfg->projections[view_k]);
+        printf("opening file '%s' failed\n", cfg->projections[view_k].c_str());
         exit(-1);
     }
     int bI = cfg->board_I, bJ = cfg->board_J;
