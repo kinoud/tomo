@@ -61,7 +61,7 @@ void proj_and_save(p3 tube, p3 board, char* savefile) {
 	fout.write((char*)out_data, IJ * sizeof(Config::raw_t));
 }
 
-int main() {
+int main2() {
 	ifstream fin;
 	fin.open(scheme);
 	assert(fin.is_open());

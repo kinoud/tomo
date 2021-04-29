@@ -116,6 +116,7 @@ void SART::iterate()
                 voxel_factor[v] += voxel_factor[v + i * V];
             }
         }
+        int maxv = (1ll << (sizeof(Config::raw_voxel_t) * 8)) - 1;
         for (int v = 0; v < V; v++)
         {
             if (voxel_factor[v] == 0) {
@@ -126,6 +127,8 @@ void SART::iterate()
             voxel[v] += cfg->lambda * dvoxel[v] / voxel_factor[v];
             if (voxel[v] < 0)
                 voxel[v] = 0;
+            if (voxel[v] > maxv)
+                voxel[v] = maxv;
         }
         turn++;
     }

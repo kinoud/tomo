@@ -10,21 +10,23 @@
 
 using namespace std;
 
-char scheme[100] = "exp/proj.sche";
+extern char* working_dir;
+static const char* scheme = "proj.sche";
 char voxel_in[100];
-char geo_cfg[100];
+static char geo_cfg[100];
 char out_dir[100];
-typedef Config::raw_t raw_in_t;
-typedef Config::raw_t raw_out_t;
-raw_in_t* in_data;
-raw_out_t* out_data;
+Config::raw_voxel_t* in_data;
+Config::raw_proj_t* out_data;
 double* voxel;
 double* proj;
 
-Config *cfg = new Config();
+extern Config *cfg;
 Siddon siddon;
 double maxp=0;
-char tmp_str[100];
+long long full = (1ll << (sizeof(Config::raw_proj_t) * 8)) - 1;
+static char tmp_str[100];
+
+extern void open_file(ifstream& s, const char* fname);
 
 void proj_and_save(p3 tube, p3 board, char* savefile) {
 	p3 board0 = { board.x - 0.5 * (cfg->board_I - 1) * cfg->board_w,
@@ -44,23 +46,26 @@ void proj_and_save(p3 tube, p3 board, char* savefile) {
 			assert(p >= 0);
 			proj[i * cfg->board_J + j] = p;
 			assert(proj[i * cfg->board_J + j] >= 0);
-			if (savefile != NULL) { maxp = max(maxp, p); }
+			maxp = max(maxp, p);
 		}
 	}
-	if (savefile == NULL)return;
 	int IJ = cfg->board_I * cfg->board_J;
-	int full = (1ll << (sizeof(raw_out_t) * 8)) - 1;
 	for (int i = 0; i < IJ; i++) {
-		out_data[i] = min(1.0, proj[i] / maxp) * full;
+		if (proj[i] > full) {
+			out_data[i] = full;
+			printf("projection value %.2f cut down to limit %lld\n", proj[i], full);
+		}
+		else {
+			out_data[i] = proj[i];
+		}
 	}
 	ofstream fout(savefile, ios::binary);
-	fout.write((char*)out_data, IJ * sizeof(raw_out_t));
+	fout.write((char*)out_data, IJ * sizeof(Config::raw_proj_t));
 }
 
-int main() {
+void projection() {
 	ifstream fin;
-	fin.open(scheme);
-	assert(fin.is_open());
+	open_file(fin, scheme);
 	fin >> voxel_in 
 		>> geo_cfg
 		>> out_dir
@@ -73,11 +78,9 @@ int main() {
 		>> cfg->object_w
 		>> cfg->object_h;
 	int V = cfg->object_I * cfg->object_J * cfg->object_K;
-	in_data = new raw_in_t[V];
-	out_data = new raw_out_t[cfg->board_I * cfg->board_J];
-	fin.close();
-	fin.open(geo_cfg);
-	assert(fin.is_open());
+	in_data = new Config::raw_voxel_t[V];
+	out_data = new Config::raw_proj_t[cfg->board_I * cfg->board_J];
+	open_file(fin, geo_cfg);
 	int n; fin >> n;
 	for (int i = 0; i < n; i++) {
 		p3 tube;
@@ -93,15 +96,17 @@ int main() {
 	voxel = new double[cfg->object_I * cfg->object_J * cfg->object_K];
 	proj = new double[cfg->board_I * cfg->board_J];
 	
+	sprintf(tmp_str, "%s/%s", working_dir, voxel_in);
 	fin.close();
-	fin.open(voxel_in,ios::binary);
+	fin.open(tmp_str, ios::binary);
+	printf("opening file '%s' ...\n", tmp_str);
 	if (!fin.is_open()) {
-		cout << "open file failed" << endl;
-		exit(0);
+		printf("opening file '%s' failed\n");
+		exit(-1);
 	}
 	clock_t t = clock();
 	cout << "reading data...";
-	fin.read((char*)in_data, sizeof(raw_in_t) * V);
+	fin.read((char*)in_data, sizeof(Config::raw_voxel_t) * V);
 	double a = 0, b = 0;
 	for (int v = 0; v < V; v++) {
 		voxel[v] = in_data[v];
@@ -110,36 +115,31 @@ int main() {
 	}
 	printf("maxv = %.2f, minv = %.2f\n", a, b);
 	cout << "ok\n";
+	fin.close();
 	printf("%.2fs used\n", timer(t));
 	
-	if (_access(out_dir, 0) == 0) {
-		int flag = _rmdir(out_dir);
-		if (flag) {
-			cout << "delete directory failed\n";
-			exit(-1);
-		}
+	sprintf(tmp_str, "%s/%s", working_dir, out_dir);
+	sprintf(out_dir, "%s", tmp_str);
+	int f = 1;
+	while (_access(tmp_str, 0) == 0) {
+		sprintf(tmp_str, "%s(%d)", out_dir, f++);
 	}
+	sprintf(out_dir, "%s", tmp_str);
+
 	int flag = _mkdir(out_dir);
 	if (flag) {
-		cout << "create directory failed\n";
+		printf("creating directory '%s' failed\n",out_dir);
 		exit(-1);
 	}
 	t = clock();
 	maxp = 0;
-	for (int step = 0; step <= 1; step++) {
-		for (int k = 0; k < cfg->tubes.size(); k++) {
-			p3 tube = cfg->tubes[k];
-			p3 board = cfg->boards[k];
-			if (step == 0) {
-				proj_and_save(tube, board, NULL);
-				printf("\r(1)view %2d/%d", k + 1, cfg->tubes.size());
-			}
-			else {
-				sprintf(tmp_str, "%s/projectImage%d.raw", out_dir, k + 1);
-				proj_and_save(tube, board, tmp_str);
-				printf("\r(2)view %2d/%d", k + 1, cfg->tubes.size());
-			}
-		}puts("");
-	}
+	for (int k = 0; k < cfg->tubes.size(); k++) {
+		p3 tube = cfg->tubes[k];
+		p3 board = cfg->boards[k];
+		sprintf(tmp_str, "%s/projectImage%d.raw", out_dir, k + 1);
+		proj_and_save(tube, board, tmp_str);
+		printf("\rview %2d/%d", k + 1, cfg->tubes.size());
+	}puts("");
+	printf("maxv=%.2f (limit=%lld)\n", maxp, full);
 	printf("%.2fs used\n", timer(t));
 }

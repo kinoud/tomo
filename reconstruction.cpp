@@ -7,60 +7,44 @@
 #include"SART.h"
 using namespace std;
 
-char scheme[100] = "exp/rec.sche";
+extern char* working_dir;
+static const char* scheme = "rec.sche";
 char in_dir[100];
-char geo_cfg[100];
+static char geo_cfg[100];
 char check_point[100];
 char out_file[100];
-char tmp_str[100];
-Config *cfg = new Config();
+static char tmp_str[100];
+extern Config *cfg;
 
 SART solver;
 
-Config::raw_t* raw_data;
+Config::raw_voxel_t* raw_data;
 
-void open_file(ifstream& s, string fname) {
-    if (s.is_open())s.close();
-    s.open(fname);
-    if (!s.is_open()) {
-        cout << "opening file " << fname << " failed!" << endl;
-        exit(-1);
-    }
-}
+extern void open_file(ifstream& s, const char* fname);
 
-void save_sections_raw(bool k_first = false){
-    int I = cfg->object_I, J = cfg->object_J, K = cfg->object_K;
-    int IJ = I * J, JK = J * K;
-    raw_data = new Config::raw_t[I*J*K];
-    double maxv = 0;
-    for (int v = 0; v < I * J * K; v++) {
-        maxv = max(maxv, solver.voxel[v]);
-    }
-    int full = (1ll << (8 * sizeof(Config::raw_t))) - 1;
-    for (int i = 0; i < I; i++) {
-        for (int j = 0; j < J; j++) {
-            for (int k = 0; k < K; k++) {
-                int v = i * JK + j * K + k;
-                int vo = v;
-                if (k_first) {
-                    vo = k * IJ + i * J + j;
-                }
-                raw_data[vo] = min(1.0, max(0.0,solver.voxel[v] / maxv)) * full;
-            }
+void save_voxel(){
+    int V = cfg->object_I * cfg->object_J * cfg->object_K;
+    raw_data = new Config::raw_voxel_t[V];
+    int full = (1ll << (8 * sizeof(Config::raw_voxel_t))) - 1;
+    for (int v = 0; v < V; v++) {
+        if (solver.voxel[v] > full) {
+            printf("voxel %.2f cut down to limit %d (which makes a bad checkpoint)\n",solver.voxel[v],full);
+        }
+        else {
+            raw_data[v] = solver.voxel[v];
         }
     }
-
-    ofstream fout(out_file,ios::binary);
+    sprintf(tmp_str, "%s/%s", working_dir, out_file);
+    ofstream fout(tmp_str,ios::binary);
     if(!fout.is_open()){
-        printf("write file failed");
-        exit(0);
+        printf("write file '%s' failed\n", tmp_str);
+        exit(-1);
     }
-    fout.write((char*)raw_data,I*J*K*sizeof(Config::raw_t));
-
+    fout.write((char*)raw_data,V*sizeof(Config::raw_voxel_t));
 }
 
 
-int main(){
+void reconstruction(){
     ifstream fin;
     open_file(fin, scheme);
     int T;
@@ -86,7 +70,7 @@ int main(){
         fin >> tube.x >> tube.y >> tube.z;
         //cout << tube.x << " " << tube.y << " " << tube.z << " " << endl;
         cfg->tubes.push_back(tube);
-        sprintf(tmp_str,"%s/projectImage%d.raw",in_dir,i+1);
+        sprintf(tmp_str, "%s/%s/projectImage%d.raw", working_dir, in_dir, i + 1);
         cfg->projections.push_back(string(tmp_str));
     }
     for (int i = 0; i < n; i++) {
@@ -102,17 +86,15 @@ int main(){
     //save_raw(cfg, solver.proj, "test.raw");
     //return 0;
     double sec = 0;
-    cout << sec << "s\n";
+    printf("%.1fs\n", sec);
     for(int t=0;t<T;t++){
         clock_t clk = clock();
-        cout<<"epoch "<<t+1<<"\n";
+        printf("epoch %d/%d\n", t + 1, T);
         solver.iterate();
-        cout << "  ok\n";
+        printf(" ok\n");
         double e = timer(clk);
         sec += e;
-        cout<<e<<"s (total " << sec << "s)\n";
-        //printf("time1 = %.2fs time2 = %.2fs\n", 1.0*solver.siddon.time1 / CLOCKS_PER_SEC,
-        //   1.0*solver.siddon.time2 / CLOCKS_PER_SEC);
+        printf("%.1fs (total %.1fs)\n", e, sec);
     }
-    save_sections_raw();
+    save_voxel();
 }

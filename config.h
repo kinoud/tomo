@@ -15,7 +15,8 @@ public:
     int num_threads=4;
     double board_w,object_w,object_h,
         lambda=1;
-    typedef unsigned short raw_t;
+    typedef unsigned short raw_voxel_t;
+    typedef unsigned int raw_proj_t;
     vector<p3> tubes;
     vector<p3> boards;
     vector<string> projections;

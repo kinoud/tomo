@@ -6,8 +6,8 @@ class Solver
 {
 protected:
 	Config* cfg;
-	Config::raw_t* raw_data = NULL;
-	void read_raw(int view_k, Config::raw_t *dst=NULL);
+	Config::raw_proj_t* raw_data = NULL;
+	void read_raw(int view_k, Config::raw_proj_t*dst=NULL);
 public:
 	double* voxel = NULL;
 	void init(Config* cfg);
