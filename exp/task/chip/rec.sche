@@ -1,15 +1,15 @@
-proj/siddon_circle400_30
-geo/circle400_30.in
+proj/siddon_c400n15c200n15
+geo/c400n15c200n15.in
 none
-rec/head_circle400_41_sart_1.0_20(1).raw
-3000
-3000
+rec/chip_c400n15c200n15_41_sart_1.0_20.raw
+1000
+1000
 0.5
 400
 400
 41
 0.5
-2.0
+4.0
 1.0
 20
 

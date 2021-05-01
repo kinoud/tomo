@@ -1,14 +1,14 @@
-head_400x400x328.raw
-geo/circle400.in
-proj/siddon_circle400
-3000
-3000
+chip_400x400x41.raw
+geo/c400n15c200n15.in
+proj/siddon_c400n15c200n15.in
+1000
+1000
 0.5
 400
 400
-328
+41
 0.5
-0.5
+4.0
 
 参数说明：
 

@@ -1,1 +1,0 @@
-g++ -Wall MLEM.cpp SART.cpp projection.cpp siddon.cpp solver.cpp -o proj -O2

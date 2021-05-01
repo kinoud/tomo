@@ -8,11 +8,12 @@
 using namespace std;
 
 extern char* working_dir;
-static const char* scheme = "rec.sche";
+static const char* scheme = "task.sche";
 char in_dir[100];
 static char geo_cfg[100];
 char check_point[100];
 char out_file[100];
+static double* voxel=NULL;
 static char tmp_str[100];
 extern Config *cfg;
 
@@ -22,7 +23,7 @@ Config::raw_voxel_t* raw_data;
 
 extern void open_file(ifstream& s, const char* fname);
 
-void save_voxel(){
+void save_voxel(ofstream& fout){
     int V = cfg->object_I * cfg->object_J * cfg->object_K;
     raw_data = new Config::raw_voxel_t[V];
     int full = (1ll << (8 * sizeof(Config::raw_voxel_t))) - 1;
@@ -35,11 +36,7 @@ void save_voxel(){
         }
     }
     sprintf(tmp_str, "%s/%s", working_dir, out_file);
-    ofstream fout(tmp_str,ios::binary);
-    if(!fout.is_open()){
-        printf("write file '%s' failed\n", tmp_str);
-        exit(-1);
-    }
+    
     fout.write((char*)raw_data,V*sizeof(Config::raw_voxel_t));
 }
 
@@ -48,10 +45,15 @@ void reconstruction(){
     ifstream fin;
     open_file(fin, scheme);
     int T;
-    fin >> in_dir
+    int zres_factor;
+    fin >> tmp_str
         >> geo_cfg
-        >> check_point
+        >> in_dir
         >> out_file
+        >> check_point
+        >> zres_factor
+        >> cfg->lambda
+        >> T
         >> cfg->board_I
         >> cfg->board_J
         >> cfg->board_w
@@ -59,9 +61,9 @@ void reconstruction(){
         >> cfg->object_J
         >> cfg->object_K
         >> cfg->object_w
-        >> cfg->object_h
-        >> cfg->lambda
-        >> T;
+        >> cfg->object_h;
+    cfg->object_h *= zres_factor;
+    cfg->object_K /= zres_factor;
     // printf("geo=%s\n",geo_cfg);
     open_file(fin, geo_cfg);
     int n; fin >> n;
@@ -80,11 +82,24 @@ void reconstruction(){
         cfg->boards.push_back(det);
     }
     solver.init(cfg);
-    if (strcmp(check_point, "none") != 0)
-        solver.load_cp(check_point);
+    if (strcmp(check_point, "none") != 0) {
+        sprintf(tmp_str, "%s/%s", working_dir, check_point);
+        solver.load_cp(tmp_str);
+    }
     //solver.read_proj(cfg->projections[0]);
     //save_raw(cfg, solver.proj, "test.raw");
     //return 0;
+
+    ofstream fout(tmp_str, ios::binary);
+    if (!fout.is_open()) {
+        printf("write file '%s' failed\n", tmp_str);
+        exit(-1);
+    }
+
+    delete voxel;
+    int V = cfg->object_I * cfg->object_J * cfg->object_K;
+    voxel = new double[V];
+    memcpy(voxel, solver.voxel, V * sizeof(double));
     double sec = 0;
     printf("%.1fs\n", sec);
     for(int t=0;t<T;t++){
@@ -94,7 +109,26 @@ void reconstruction(){
         printf(" ok\n");
         double e = timer(clk);
         sec += e;
-        printf("%.1fs (total %.1fs)\n", e, sec);
+        printf("%.1fs used (total %.1fs)\n", e, sec);
+
+        double voxel_diff = 0, VE0 = 0;
+        for (int v = 0; v < V; v++) {
+            voxel_diff += (voxel[v] - solver.voxel[v]) * (voxel[v] - solver.voxel[v]);
+            VE0 += voxel[v] * voxel[v];
+        }
+        voxel_diff = sqrt(voxel_diff / VE0);
+        memcpy(voxel, solver.voxel, V * sizeof(double));
+
+        double maxd = 0, mind = solver.differences[0], avgd = 0;
+        for (double d : solver.differences) {
+            maxd = max(maxd, d);
+            mind = min(mind, d);
+            avgd += d;
+        }
+        avgd /= solver.differences.size();
+        printf("proj RMSE max min avg = %.3f%% %.3f%% %.3f%%\n", 100*maxd, 100*mind, 100*avgd);
+        printf("voxel RMSE            = %.3f%%\n", 100*voxel_diff);
+        puts("");
     }
-    save_voxel();
+    save_voxel(fout);
 }

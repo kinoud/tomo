@@ -11,7 +11,7 @@
 using namespace std;
 
 extern char* working_dir;
-static const char* scheme = "proj.sche";
+static const char* scheme = "task.sche";
 char voxel_in[100];
 static char geo_cfg[100];
 char out_dir[100];
@@ -66,9 +66,14 @@ void proj_and_save(p3 tube, p3 board, char* savefile) {
 void projection() {
 	ifstream fin;
 	open_file(fin, scheme);
-	fin >> voxel_in 
+	fin >> voxel_in
 		>> geo_cfg
 		>> out_dir
+		>> tmp_str
+		>> tmp_str
+		>> tmp_str
+		>> tmp_str
+		>> tmp_str
 		>> cfg->board_I
 		>> cfg->board_J
 		>> cfg->board_w
@@ -77,7 +82,7 @@ void projection() {
 		>> cfg->object_K
 		>> cfg->object_w
 		>> cfg->object_h;
-	int V = cfg->object_I * cfg->object_J * cfg->object_K;
+	int V = cfg->object_I * cfg->object_J * cfg->object_K; 
 	in_data = new Config::raw_voxel_t[V];
 	out_data = new Config::raw_proj_t[cfg->board_I * cfg->board_J];
 	open_file(fin, geo_cfg);

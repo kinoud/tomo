@@ -44,8 +44,7 @@ void Solver::init(Config* cfg) {
     int V = cfg->object_I * cfg->object_J * cfg->object_K;
     delete[]voxel;
     voxel = new double[V];
-    mem_stat(V * sizeof(double));
     delete[] raw_data;
     raw_data = new Config::raw_proj_t[bI * bJ];
-    mem_stat(bI * bJ * sizeof(Config::raw_proj_t));
+    differences.resize(cfg->tubes.size());
 }

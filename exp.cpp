@@ -7,7 +7,7 @@ using namespace std;
 * 1: projection
 * 2: reconstruction
 */
-int task = 2;
+int task = 1;
 char* working_dir = "exp/task/head";
 // CONFIGURATION END
 

@@ -10,6 +10,7 @@ protected:
 	void read_raw(int view_k, Config::raw_proj_t*dst=NULL);
 public:
 	double* voxel = NULL;
+	vector<double> differences;
 	void init(Config* cfg);
 	virtual void iterate()=0;
 	void load_cp(char* raw_file_name);

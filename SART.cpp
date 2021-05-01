@@ -61,10 +61,12 @@ void SART::iterate()
         swap(turn_to_view[a], turn_to_view[b]);
     }
 
+    double E0 = 0;
     view_k = 0;
     while (turn < view_N)
     {
         view_k = turn_to_view[turn];
+        differences[view_k] = 0;
         //printf("\r                                                                     ");
         printf("\rturn %2d/%d", turn + 1, view_N, view_k);
         read_raw(view_k);
@@ -75,6 +77,7 @@ void SART::iterate()
             for (int j = 0; j < bJ; j++) {
                 int r = i * bJ + j;
                 proj[r] = raw_data[r];
+                E0 += proj[r] * proj[r];
                 if (raw_data[r] > 0)has = true;
             }
             if (has) {
@@ -120,7 +123,7 @@ void SART::iterate()
         for (int v = 0; v < V; v++)
         {
             if (voxel_factor[v] == 0) {
-                printf("error: voxel_factor=0\n");
+                //printf("error: voxel_factor=0\n");
                 continue;
             }
                 
@@ -130,6 +133,7 @@ void SART::iterate()
             if (voxel[v] > maxv)
                 voxel[v] = maxv;
         }
+        differences[view_k] = sqrt(differences[view_k]/E0);
         turn++;
     }
     delete[] ths;
@@ -156,6 +160,7 @@ void SART::update(int th)
     p3 board0 = {board.x - 0.5 * (cfg->board_I - 1) * cfg->board_w,
                  board.y - 0.5 * (cfg->board_J - 1) * cfg->board_w,
                  board.z}; // center of pixel (0,0)
+    double diff = 0;
     while (1) {
         int I0, I1;
         {
@@ -182,6 +187,7 @@ void SART::update(int th)
                 {
                     s += voxel[siddon.voxel_idx[k]] * siddon.voxel_a[k];
                 }
+                diff += (s - proj[r]) * (s - proj[r]);
                 if (siddon.voxel_len == 0)
                     continue;
                 // back projecting
@@ -194,5 +200,8 @@ void SART::update(int th)
             }
         }
     }
-    
+    {
+        unique_lock<mutex> lk(_mtx);
+        this->differences[view_k] += diff;
+    }
 }
