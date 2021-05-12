@@ -9,7 +9,8 @@ private:
 	// calculated parameters
 	double object_x0, object_y0, object_z0;
 	double object_x1 = 0, object_y1 = 0, object_z1 = 0;
-	double object_w, object_h, object_J, object_K, object_JK;
+	double object_w, object_h;
+	int object_J, object_K, object_JK;
 
 	// helper functions
 	

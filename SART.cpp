@@ -41,8 +41,31 @@ void SART::init(Config *cfg)
     for (int i = 0; i < cfg->tubes.size(); i++)
         turn_to_view[i] = i;
 
+    for (double& d : differences)
+        d = 1e20;
+
     for (int i = 0; i < V; i++)
         voxel[i] = 0;
+}
+
+void SART::set_geo(p3 tube, p3 board) {
+    this->tube = tube;
+    this->board = board;
+    board0 = { board.x - 0.5 * (cfg->board_I - 1) * cfg->board_w,
+                    board.y - 0.5 * (cfg->board_J - 1) * cfg->board_w,
+                    board.z }; // center of pixel (0,0)
+}
+double SART::project(int pi, int pj) {
+    Siddon& siddon = siddons[0];
+
+    siddon.trace_ray({ board0.x + pi * cfg->board_w,
+                        board0.y + pj * cfg->board_w,
+                        board0.z }, tube);
+    double p = 0;
+    for (int k = 0; k < siddon.voxel_len; k++) {
+        p += siddon.voxel_a[k] * voxel[siddon.voxel_idx[k]];
+    }
+    return p;
 }
 
 void SART::iterate()
@@ -63,6 +86,8 @@ void SART::iterate()
 
     double E0 = 0;
     view_k = 0;
+    int worse_cnt = 0;
+    printf("lambda = %.3f\n", cfg->lambda);
     while (turn < view_N)
     {
         view_k = turn_to_view[turn];
@@ -136,6 +161,7 @@ void SART::iterate()
         differences[view_k] = sqrt(differences[view_k]/E0);
         turn++;
     }
+
     delete[] ths;
 }
 

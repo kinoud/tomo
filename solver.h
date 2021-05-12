@@ -11,8 +11,10 @@ protected:
 public:
 	double* voxel = NULL;
 	vector<double> differences;
-	void init(Config* cfg);
-	virtual void iterate()=0;
+	virtual void init(Config* cfg);
+	virtual void iterate() = 0;
+	virtual double project(int, int) = 0;
+	virtual void set_geo(p3,p3) = 0;
 	void load_cp(char* raw_file_name);
 };
 

@@ -23,9 +23,11 @@ private:
 	void update(int th);
 	int* turn_to_view = NULL;
 	vector<Siddon> siddons;
+	p3 tube, board, board0;
 public:
 	double* proj = NULL;
-	void init(Config*cfg);
-	
+	virtual void init(Config*cfg);
+	virtual void set_geo(p3 tube, p3 board);
+	virtual double project(int pi, int pj);
 	virtual void iterate();
 };

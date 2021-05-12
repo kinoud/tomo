@@ -6,7 +6,8 @@ using namespace std;
 class DDSART: public Solver{
 private:
 	int view_k;
-	void update();
+	void update1(int);
+	void update2(int);
     
     void back_project(int vi,int vj,int vk);
     p3 board_base;
@@ -14,8 +15,8 @@ private:
     p3 tube;
 	double* proj = NULL, * eproj = NULL;
 public:
-	void init(Config*cfg);
-    void set_geo(p3 tube, p3 board);
-	double project(int pi,int pj);
+	virtual void init(Config*cfg);
+    virtual void set_geo(p3 tube, p3 board);
+	virtual double project(int pi,int pj);
 	virtual void iterate();
 };

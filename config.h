@@ -12,7 +12,7 @@ struct p2{
 class Config{
 public:
     int board_I,board_J,object_I,object_J,object_K;
-    int num_threads=4;
+    int num_threads=5;
     double board_w,object_w,object_h,
         lambda=1;
     typedef unsigned short raw_voxel_t;

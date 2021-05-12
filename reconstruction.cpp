@@ -16,8 +16,7 @@ char out_file[100];
 static double* voxel=NULL;
 static char tmp_str[100];
 extern Config *cfg;
-
-SART solver;
+extern Solver* solver;
 
 Config::raw_voxel_t* raw_data;
 
@@ -28,14 +27,14 @@ void save_voxel(ofstream& fout){
     raw_data = new Config::raw_voxel_t[V];
     int full = (1ll << (8 * sizeof(Config::raw_voxel_t))) - 1;
     for (int v = 0; v < V; v++) {
-        if (solver.voxel[v] > full) {
-            printf("voxel %.2f cut down to limit %d (which makes a bad checkpoint)\n",solver.voxel[v],full);
+        if (solver->voxel[v] > full) {
+            printf("voxel %.2f cut down to limit %d (which makes a bad checkpoint)\n",solver->voxel[v],full);
         }
         else {
-            raw_data[v] = solver.voxel[v];
+            raw_data[v] = solver->voxel[v];
         }
     }
-    sprintf(tmp_str, "%s/%s", working_dir, out_file);
+    
     
     fout.write((char*)raw_data,V*sizeof(Config::raw_voxel_t));
 }
@@ -81,17 +80,26 @@ void reconstruction(){
         //cout << det.x << " " << det.y << " " << det.z << " " << endl;
         cfg->boards.push_back(det);
     }
-    solver.init(cfg);
+    solver->init(cfg);
     if (strcmp(check_point, "none") != 0) {
         sprintf(tmp_str, "%s/%s", working_dir, check_point);
-        solver.load_cp(tmp_str);
+        solver->load_cp(tmp_str);
     }
-    //solver.read_proj(cfg->projections[0]);
-    //save_raw(cfg, solver.proj, "test.raw");
+    //solver->read_proj(cfg->projections[0]);
+    //save_raw(cfg, solver->proj, "test.raw");
     //return 0;
 
+    sprintf(tmp_str, "%s/%s", working_dir, out_file);
+    printf("opening file '%s' for writing...\n", tmp_str);
     ofstream fout(tmp_str, ios::binary);
     if (!fout.is_open()) {
+        printf("write file '%s' failed\n", tmp_str);
+        exit(-1);
+    }
+    sprintf(tmp_str, "%s/%s.log", working_dir, out_file);
+    printf("opening file '%s' for logging...\n", tmp_str);
+    ofstream flog(tmp_str);
+    if (!flog.is_open()) {
         printf("write file '%s' failed\n", tmp_str);
         exit(-1);
     }
@@ -99,13 +107,16 @@ void reconstruction(){
     delete voxel;
     int V = cfg->object_I * cfg->object_J * cfg->object_K;
     voxel = new double[V];
-    memcpy(voxel, solver.voxel, V * sizeof(double));
+    memcpy(voxel, solver->voxel, V * sizeof(double));
     double sec = 0;
     printf("%.1fs\n", sec);
+    double saved_avgd = 1e10;
     for(int t=0;t<T;t++){
         clock_t clk = clock();
         printf("epoch %d/%d\n", t + 1, T);
-        solver.iterate();
+        flog << "epoch " << t + 1 << "/" << T << '\n';
+        flog << "lambda = " << cfg->lambda << '\n';
+        solver->iterate();
         printf(" ok\n");
         double e = timer(clk);
         sec += e;
@@ -113,21 +124,27 @@ void reconstruction(){
 
         double voxel_diff = 0, VE0 = 0;
         for (int v = 0; v < V; v++) {
-            voxel_diff += (voxel[v] - solver.voxel[v]) * (voxel[v] - solver.voxel[v]);
+            voxel_diff += (voxel[v] - solver->voxel[v]) * (voxel[v] - solver->voxel[v]);
             VE0 += voxel[v] * voxel[v];
         }
         voxel_diff = sqrt(voxel_diff / VE0);
-        memcpy(voxel, solver.voxel, V * sizeof(double));
+        memcpy(voxel, solver->voxel, V * sizeof(double));
 
-        double maxd = 0, mind = solver.differences[0], avgd = 0;
-        for (double d : solver.differences) {
+        double maxd = 0, mind = solver->differences[0], avgd = 0;
+        for (double d : solver->differences) {
             maxd = max(maxd, d);
             mind = min(mind, d);
             avgd += d;
         }
-        avgd /= solver.differences.size();
-        printf("proj RMSE max min avg = %.3f%% %.3f%% %.3f%%\n", 100*maxd, 100*mind, 100*avgd);
-        printf("voxel RMSE            = %.3f%%\n", 100*voxel_diff);
+        avgd /= solver->differences.size();
+        cfg->lambda *= 0.99;
+        saved_avgd = avgd;
+        sprintf(tmp_str,"proj RMSE max min avg = %.3f%% %.3f%% %.3f%%\n", 100*maxd, 100*mind, 100*avgd);
+        flog << tmp_str;
+        printf("%s",tmp_str);
+        sprintf(tmp_str,"voxel RMSE            = %.3f%%\n", 100*voxel_diff);
+        flog << tmp_str << '\n';
+        printf("%s",tmp_str);
         puts("");
     }
     save_voxel(fout);

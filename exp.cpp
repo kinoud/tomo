@@ -1,15 +1,18 @@
 #include"config.h"
+#include"SART.h"
+#include"DDSART.h"
 #include<fstream>
 using namespace std;
-
 // CONFIGURATION BEGIN
 /*
 * 1: projection
 * 2: reconstruction
 */
-int task = 1;
+int task = 2;
 char* working_dir = "exp/task/head";
+Solver* solver = new DDSART();
 // CONFIGURATION END
+
 
 Config* cfg = new Config();
 extern void projection();
