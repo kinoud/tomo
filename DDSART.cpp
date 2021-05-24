@@ -33,8 +33,7 @@ double DDSART::project(int pi, int pj) {
     int I = cfg->object_I, J = cfg->object_J, K = cfg->object_K;
 
     p3 corner = { board_base.x + pi * cfg->board_w,board_base.y + pj * cfg->board_w,board_base.z };
-    p3 corner2 = { corner.x + w, corner.y + w, corner.z };
-
+    p3 corner2 = { corner.x + cfg->board_w, corner.y + cfg->board_w, corner.z };
 
     p2 d1 = {
         (tube.x - corner.x) / (tube.z - corner.z) * h,
@@ -63,13 +62,13 @@ double DDSART::project(int pi, int pj) {
 
     double s = 0, sum_a = 0;
 
-    
-
     for (int k = 0; k < K; k++) {
         c1.x += d1.x, c1.y += d1.y;
         c2.x += d2.x, c2.y += d2.y;
+        sum_a += (c2.y - c1.y) * (c2.x - c1.x);
         if (c1.x > w * I || c1.y > w * J || c2.x < 0 || c2.y < 0)
             continue;
+        double rect = (c2.y - c1.y) * (c2.x - c1.x);
         double min_x = min(w, c2.x - c1.x);
         double min_y = min(w, c2.y - c1.y);
         int i0 = floor(MAX(0.0, c1.x) / w);
@@ -81,14 +80,14 @@ double DDSART::project(int pi, int pj) {
             for (int j = j0; y < c2.y && j < J; j++, y += w) {
                 int v = i * J * K + j * K + k;
                 double a = dx * MIN(MIN(min_y, y + w - c1.y), c2.y - y);
+                // printf("a=%.2f\n", a);
                 s += voxel[v] * a;
-                sum_a += a;
             }
         }
-
     }
     int r = pi*cfg->board_J+pj;
-    eproj[r] = (proj[r]*w*w-s)/sum_a;
+    eproj[r] = (proj[r]-s)/sum_a;
+
     return s;
 }
 
@@ -116,8 +115,8 @@ void DDSART::back_project(int vi,int vj,int vk){
         tube.y + t*(corner2.y-tube.y) - board_base.y
     };
     
-    c1.x = max(0.0,c1.x);
-    c1.y = max(0.0,c1.y);
+    // c1.x = max(0.0,c1.x);
+    // c1.y = max(0.0,c1.y);
     
     w = cfg->board_w;
     int I = cfg->board_I, J = cfg->board_J;
@@ -125,8 +124,8 @@ void DDSART::back_project(int vi,int vj,int vk){
     double sum_a = 0, eback = 0;
     double min_x = min(w, c2.x - c1.x);
     double min_y = min(w, c2.y - c1.y);
-    int i0 = floor(c1.x/w);
-    int j0 = floor(c1.y/w);
+    int i0 = MAX(0,floor(c1.x/w));
+    int j0 = MAX(0,floor(c1.y/w));
     double x = i0 * w, y0 = j0 * w, y;
     for (int i = i0; x < c2.x && i < I; i++, x += w) {
         y = y0;
@@ -134,11 +133,13 @@ void DDSART::back_project(int vi,int vj,int vk){
         for (int j = j0; y < c2.y && j < J; j++, y += w) {
             int r = i*J+j;
             double a = dx * MIN(MIN(min_y, y + w - c1.y), c2.y - y);
-            sum_a += a;
             eback += eproj[r]*a;
         }
     }
+
+    sum_a = (c2.y - c1.y) * (c2.x - c1.x);
     eback /= sum_a;
+    //if (sum_a < 1e-8) eback = 0;
     //if(sum_a!=0)printf("%.5f\n", sum_a);
     int v = vi*cfg->object_J*cfg->object_K+vj*cfg->object_K+vk;
     voxel[v]+=eback;

@@ -26,7 +26,6 @@ void SART::init(Config *cfg)
     delete[] voxel_factor;
     delete[] dvoxel;
     delete[] proj;
-    delete[] _sta;
     delete[] turn_to_view;
     //delete[] is_bg;
 
@@ -34,8 +33,6 @@ void SART::init(Config *cfg)
     proj = new double[bI * bJ];
     voxel_factor = new double[nt * V];
     dvoxel = new double[nt * V];
-    p_cnt = new int[bI];
-    _sta = new int[bI];
     
     turn_to_view = new int[cfg->tubes.size()];
     for (int i = 0; i < cfg->tubes.size(); i++)
@@ -95,34 +92,12 @@ void SART::iterate()
         //printf("\r                                                                     ");
         printf("\rturn %2d/%d", turn + 1, view_N, view_k);
         read_raw(view_k);
-
-        int W=0;
-        for (int i = 0; i < bI; i++) {
-            bool has = false;
-            for (int j = 0; j < bJ; j++) {
-                int r = i * bJ + j;
-                proj[r] = raw_data[r];
-                E0 += proj[r] * proj[r];
-                if (raw_data[r] > 0)has = true;
-            }
-            if (has) {
-                W++;
-                p_cnt[i] = 1;
-            }
-            else p_cnt[i] = 0;
+        
+        E0 = 0;
+        for (int r = 0; r < bI * bJ; r++) {
+            proj[r] = raw_data[r];
+            E0 += proj[r] * proj[r];
         }
-
-        W/=(nt*50);
-        _top = 0;
-        _sta[_top++] = 0;
-        for(int i=1;i<bI;i++){
-            p_cnt[i]+=p_cnt[i-1];
-            if(p_cnt[i]>W){
-                _sta[_top++] = i;
-                p_cnt[i]=0;
-            }
-        }
-        _sta[_top++] = bI;
 
         for (int i = 0; i < nt; i++)
         {
@@ -187,42 +162,31 @@ void SART::update(int th)
                  board.y - 0.5 * (cfg->board_J - 1) * cfg->board_w,
                  board.z}; // center of pixel (0,0)
     double diff = 0;
-    while (1) {
-        int I0, I1;
+    for (int i = th; i < bI; i+=cfg->num_threads)
+    {
+        for (int j = 0; j < bJ; j++)
         {
-            unique_lock<mutex> lk(_mtx);
-            if (_top<=1)break;
-            I0 = _sta[_top - 2];
-            I1 = _sta[_top - 1];
-            _top--;
-        }
-        //printf("th%d[%d,%d)\n",th, I0, I1);
-        for (int i = I0; i < I1; i++)
-        {
-            for (int j = 0; j < bJ; j++)
+            int r = i * bJ + j;
+            //if (raw_data[r] == 0)continue;
+            // simulate projecting
+            siddon.trace_ray({ board0.x + i * cfg->board_w,
+                                board0.y + j * cfg->board_w,
+                                board0.z },
+                tube);
+            double s = 0;
+            for (int k = 0; k < siddon.voxel_len; k++)
             {
-                int r = i * bJ + j;
-                //if (raw_data[r] == 0)continue;
-                // simulate projecting
-                siddon.trace_ray({ board0.x + i * cfg->board_w,
-                                  board0.y + j * cfg->board_w,
-                                  board0.z },
-                    tube);
-                double s = 0;
-                for (int k = 0; k < siddon.voxel_len; k++)
-                {
-                    s += voxel[siddon.voxel_idx[k]] * siddon.voxel_a[k];
-                }
-                diff += (s - proj[r]) * (s - proj[r]);
-                if (siddon.voxel_len == 0)
-                    continue;
-                // back projecting
-                for (int k = 0; k < siddon.voxel_len; k++)
-                {
-                    int v = siddon.voxel_idx[k];
-                    dvoxel[v] += (proj[r] - s) * siddon.voxel_a[k] / siddon.ray_len;
-                    voxel_factor[v] += siddon.voxel_a[k];
-                }
+                s += voxel[siddon.voxel_idx[k]] * siddon.voxel_a[k];
+            }
+            diff += (s - proj[r]) * (s - proj[r]);
+            if (siddon.voxel_len == 0)
+                continue;
+            // back projecting
+            for (int k = 0; k < siddon.voxel_len; k++)
+            {
+                int v = siddon.voxel_idx[k];
+                dvoxel[v] += (proj[r] - s) * siddon.voxel_a[k] / siddon.ray_len;
+                voxel_factor[v] += siddon.voxel_a[k];
             }
         }
     }

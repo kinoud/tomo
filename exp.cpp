@@ -9,8 +9,8 @@ using namespace std;
 * 2: reconstruction
 */
 int task = 2;
-char* working_dir = "exp/task/head";
-Solver* solver = new DDSART();
+char* working_dir = "exp/task/shepp";
+Solver* solver = new SART();
 // CONFIGURATION END
 
 

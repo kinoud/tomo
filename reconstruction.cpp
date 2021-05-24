@@ -26,13 +26,12 @@ void save_voxel(ofstream& fout){
     int V = cfg->object_I * cfg->object_J * cfg->object_K;
     raw_data = new Config::raw_voxel_t[V];
     int full = (1ll << (8 * sizeof(Config::raw_voxel_t))) - 1;
+    double maxv = 0;
     for (int v = 0; v < V; v++) {
-        if (solver->voxel[v] > full) {
-            printf("voxel %.2f cut down to limit %d (which makes a bad checkpoint)\n",solver->voxel[v],full);
-        }
-        else {
-            raw_data[v] = solver->voxel[v];
-        }
+        maxv = max(maxv, solver->voxel[v]);
+    }
+    for (int v = 0; v < V; v++) {
+        raw_data[v] = min(full*1.0,(solver->voxel[v]*full/maxv));
     }
     
     
@@ -137,7 +136,7 @@ void reconstruction(){
             avgd += d;
         }
         avgd /= solver->differences.size();
-        cfg->lambda *= 0.99;
+        //cfg->lambda *= 0.99;
         saved_avgd = avgd;
         sprintf(tmp_str,"proj RMSE max min avg = %.3f%% %.3f%% %.3f%%\n", 100*maxd, 100*mind, 100*avgd);
         flog << tmp_str;

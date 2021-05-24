@@ -34,6 +34,7 @@ void proj_and_save(p3 tube, p3 board, char* savefile) {
 	for (int i = 0; i < I; i++) {
 		for (int j = 0; j < J; j++) {
 			proj[i * J + j] = solver->project(i, j);
+			maxp = max(maxp, proj[i * J + j]);
 		}
 	}
 
